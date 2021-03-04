@@ -10,13 +10,13 @@ var app = new Vue({
             [1, 1], //左斜线
             [1, -1], //右斜线
         ],
-        flag: false,
-        victory: '',
+        flag: false,// 记录是否结束游戏
+        victory: '',// 胜利提示语
         history: [], //历史记录位置
         historyVal: [], //历史记录不被删除数组
-        stepHistory: 0,
-        domPiece: [], //
-        toggle: true //true为canvas,false为dom
+        stepHistory: 0, // 步数历史
+        domPiece: [], // dom棋子容器
+        toggle: true, //true为canvas,false为dom
     },
     mounted() {
         const myCanvas = document.getElementById("myCanvas");
@@ -45,7 +45,6 @@ var app = new Vue({
                     console.log('落下棋子', dx, dy, this.pieceColor[this.step % 2])
                     this.drawPiece(dx, dy, this.pieceColor[this.step % 2]); //落下棋子
                     this.pieceMapArr[dx / 30 - 1][dy / 30 - 1] = this.pieceColor[this.step % 2];
-
                     //历史记录位置
                     this.history.length = this.step;
                     this.history.push({
@@ -53,11 +52,7 @@ var app = new Vue({
                         dy,
                         color: this.pieceColor[this.step % 2]
                     });
-                    this.historyVal.push({
-                        dx,
-                        dy,
-                        color: this.pieceColor[this.step % 2]
-                    });
+                    this.historyVal = JSON.parse(JSON.stringify(this.history))
                     this.stepHistory++
                     console.log('this.history', this.history);
                     //检查当前玩家是否赢了游戏
@@ -69,27 +64,13 @@ var app = new Vue({
                     alert("不能落在有棋子的地方！");
                 }
             });
-
-
         }
     },
     methods: {
+        // 切换dom和canvas
         toggleF() {
             this.toggle = !this.toggle;
-            if (!this.toggle) {
-                // console.log("当前---------------1")
-                // let elem = document.getElementById('box01');
-                // if (elem !== null) {
-                // elem.parentNode.removeChild(elem);
-                // let elem02 = document.getElementById('box02');
-                // elem02.parentNode.removeChild(elem02);
-                // }
-                // this.drawpieceBoardDom();
-                this.restartInit()
-            } else {
-                this.restartInit()
-                // this.drawpieceBoard();
-            }
+            this.restartInit()
         },
         //初始化棋盘数组
         pieceArr() {
@@ -140,19 +121,14 @@ var app = new Vue({
             let context = canvas.getContext("2d");
             context.strokeStyle = '#666'
             for (let i = 0; i < 15; i++) {
-                //落在方格(canvas 的宽高是450)
-                // context.moveTo(15 + i * 30, 15)
-                // context.lineTo(15 + i * 30, 435)
-                // context.stroke()
-                // context.moveTo(15, 15 + i * 30)
-                // context.lineTo(435, 15 + i * 30)
-                // context.stroke()
                 //落在交叉点(480)
+                // 竖线
                 context.beginPath();
                 context.moveTo((i + 1) * 30, 30);
                 context.lineTo((i + 1) * 30, canvas.height - 30);
                 context.closePath();
                 context.stroke();
+                // 横线
                 context.beginPath();
                 context.moveTo(30, (i + 1) * 30);
                 context.lineTo(canvas.width - 30, (i + 1) * 30);
@@ -169,6 +145,7 @@ var app = new Vue({
             context.closePath();
             context.fillStyle = color;
             context.fill();
+            // this.historyVal = JSON.parse(JSON.stringify(this.history));
         },
         //胜负判断函数
         checkWin(x, y, color, mode) {
@@ -220,19 +197,12 @@ var app = new Vue({
         // dom 二维数组删除数组最后一项, 先清空棋子的填充颜色,在渲染上颜色
         regret() {
             if (!this.toggle) {
-                // console.log("-----dom------this.domPiece",this.domPiece)
+                console.log("-----dom------this.domPiece", this.domPiece)
                 if (this.history.length && !this.flag) {
                     this.history.pop(); //删除数组最后一项 
                     console.log("-----dom------this.history", this.history)
                     //重画
                     this.pieceArr();
-                    // let elem = document.getElementById('box01');
-                    // if (elem !== null) {
-                    // elem.parentNode.removeChild(elem);
-                    // let elem02 = document.getElementById('box02');
-                    // elem02.parentNode.removeChild(elem02);
-                    // } //这个太耗性能了
-                    // this.drawpieceBoardDom();
                     // 清空棋子的填充颜色
                     this.domPiece.forEach(e => {
                         e.forEach(qz => {
@@ -270,7 +240,7 @@ var app = new Vue({
         //撤销悔棋 
         undo() {
             if (!this.toggle) {
-                // console.log("-----dom------this.domPiece",this.domPiece)
+                console.log("-----dom------this.domPiece", this.domPiece)
                 if ((this.historyVal.length > this.history.length) && !this.flag) {
                     this.history.push(this.historyVal[this.step])
                     console.log("-----dom------this.history", this.history)
@@ -314,7 +284,7 @@ var app = new Vue({
             let that = this;
             //调用初始化棋盘数组函数
             that.pieceArr();
-            //创建一个容器
+            //创建一个棋子容器
             const box = document.querySelector("#chess");
             const box01 = document.createElement("div");
             box01.setAttribute("id", "box01");
@@ -324,6 +294,7 @@ var app = new Vue({
             const box02 = document.createElement("div");
             box02.setAttribute("id", "box02");
             box.appendChild(box02);
+            // 棋盘格
             let arr = new Array();
             for (let i = 0; i < 14; i++) {
                 arr[i] = new Array();
@@ -343,7 +314,7 @@ var app = new Vue({
                     chess01.appendChild(arr01[i][j]);
                 }
             }
-            // console.log("this.domPiece",this.domPiece)
+            console.log("this.domPiece", this.domPiece)
             // 填充颜色和判断
             for (let m = 0; m < 15; m++) {
                 for (let n = 0; n < 15; n++) {
@@ -367,11 +338,7 @@ var app = new Vue({
                                         n,
                                         color: that.pieceColor[that.step % 2]
                                     });
-                                    that.historyVal.push({
-                                        m,
-                                        n,
-                                        color: that.pieceColor[that.step % 2]
-                                    });
+                                    that.historyVal = JSON.parse(JSON.stringify(that.history))
                                     that.stepHistory++
                                     console.log('this.history', that.history);
                                 } else if (this.className == "qz" && that.step % 2 != 0 && this.style.backgroundColor == "") {
@@ -412,8 +379,6 @@ var app = new Vue({
                     }
                 }
             }
-
         },
-
     }
 });
